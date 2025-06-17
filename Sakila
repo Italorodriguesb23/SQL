@@ -1,0 +1,138 @@
+O banco de dados Sakila é um modelo fictício criado pela MySQL, representando uma locadora de filmes. Ele armazena informações sobre filmes,
+atores, categorias, clientes, funcionários, inventário de cópias, locações e pagamentos.
+
+
+-- Clientes que fizeram mais de 5 compras em junho de 2005
+
+select
+c.customer_id,
+concat(c.first_name, ' ', c.last_name) as cliente,
+count(r.rental_id) as locacoes
+from rental r
+join customer c
+on r.customer_id = c.customer_id
+where r.rental_date between '2005-06-01' and '2005-06-30'
+group by c.customer_id
+having locacoes > 5
+order by locacoes desc;
+
+-- Faturamento por mês.
+
+select
+year(payment_date) as ano,
+month(payment_date) as mes,
+sum(amount) as faturamento
+from payment
+group by ano, mes
+order by ano, mes;
+
+
+-- Faturamento no ano de 2005
+select
+year(payment_date) as ano,
+sum(amount) as faturamento
+from payment
+where payment_date between '2005-01-01' and '2006-01-30'
+group by ano
+order by ano
+
+-- Total gasto por cliente, separado por categoria de filme
+
+select 
+c.customer_id,
+concat(c.first_name, ' ', c.last_name) as cliente,
+cat.name as categoria,
+sum(p.amount) as total_gasto
+from payment p
+join customer c
+on p.customer_id = c.customer_id
+join rental r
+on p.rental_id = r.rental_id
+join inventory i
+on r.inventory_id = i.inventory_id
+join film f
+on i.film_id = f.film_id
+join film_category fc
+on f.film_id = fc.film_id
+join category cat
+on fc.category_id = cat.category_id
+group by c.customer_id, cat.category_id
+order by total_gasto desc;
+
+
+-- Atores que participaram de filmes mais alugados
+
+select 
+a.actor_id,
+concat(a.first_name, ' ', a.last_name) as ator,
+count(r.rental_id) as aluguel
+from actor a
+join film_actor fa
+on a.actor_id = fa.actor_id
+join film f
+on fa.film_id = f.film_id
+join inventory i
+on f.film_id = i.film_id
+join rental r
+on i.inventory_id = r.inventory_id
+group by a.actor_id
+order by aluguel desc;
+
+select * from rental;
+
+
+-- Os filmes mais alugados de cada categoria.
+
+with ranking as (
+select
+f.title as filme,
+cat.name as categoria,
+count(r.rental_id) as aluguel,
+row_number() over (partition by cat.category_id order by count(r.rental_id) desc) as posicao
+from rental r
+join inventory i
+on r.inventory_id = i.inventory_id
+join film f
+on f.film_id = i.film_id
+join film_category fc
+on f.film_id = fc.film_id
+join category cat 
+on fc.category_id = cat.category_id
+group by f.film_id, cat.category_id
+)
+select
+filme,
+categoria,
+aluguel
+from ranking
+where posicao = 1
+order by aluguel desc;
+
+
+-- Os filmes que têm mais de 100 cópias disponíveis.
+
+select
+f.film_id,
+f.title,
+count(i.inventory_id) as copias
+from film f
+join inventory i
+on f.film_id = i.film_id
+group by f.film_id
+having count(i.inventory_id) > 100
+order by copias desc;
+
+
+-- Clientes que fizeram mais de 5 locações no último mês.
+
+select
+c.customer_id,
+concat(c.first_name, ' ', c.last_name) as cliente,
+count(r.rental_id) as locacoes
+from rental r
+join customer c
+on r.customer_id = c.customer_id
+where r.rental_date >= date_sub(curdate(), interval 1 month)
+group by c.customer_id
+having locacoes > 5
+order by locacoes desc;
