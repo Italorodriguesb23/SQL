@@ -1,0 +1,137 @@
+Loja fictícia de venda de celulares, que registra informações de clientes, marcas, modelos de celulares, além das vendas realizadas.
+O banco de dados permite analisar preços, categorias, armazenamento dos celulares e acompanhar o histórico de vendas por ano e por cliente.
+
+
+-- Consulta geral
+SELECT 
+    c.id AS cliente_id,
+    c.nome AS cliente_nome,
+    c.estado AS cliente_estado,
+    c.data_nascimento AS cliente_data_nascimento,
+    m.nome AS marca_nome,
+    ce.id AS celular_id,
+    ce.modelo AS celular_modelo,
+    ce.preco AS celular_preco,
+    ce.categoria AS celular_categoria,
+    ce.armazenamento AS celular_armazenamento,
+    v.id AS venda_id,
+    v.quantidade AS venda_quantidade,
+    v.ano AS venda_ano,
+    v.preco_unitario AS venda_preco_unitario
+FROM 
+    clientes c
+JOIN 
+    vendas v ON c.id = v.cliente_id
+JOIN 
+    celulares ce ON v.celular_id = ce.id
+JOIN 
+    marcas m ON ce.marca_id = m.id
+order by c.id asc;
+
+-- Estados que mais venderam
+SELECT 
+    c.estado, 
+    SUM(v.quantidade) AS total_vendido
+FROM 
+    vendas v
+JOIN 
+    clientes c ON v.cliente_id = c.id
+JOIN 
+    celulares ce ON v.celular_id = ce.id
+GROUP BY 
+    c.estado
+ORDER BY 
+    total_vendido DESC;
+    
+-- Vendas de celulares da samsung    
+SELECT v.id AS venda_id, 
+       c.nome AS cliente_nome, 
+       cel.modelo AS celular_modelo, 
+       v.quantidade, 
+       v.ano, 
+       v.preco_unitario
+FROM vendas v
+JOIN clientes c 
+    ON v.cliente_id = c.id
+JOIN celulares cel 
+    ON v.celular_id = cel.id
+JOIN marcas m 
+    ON cel.marca_id = m.id
+WHERE m.nome = 'Samsung';
+
+-- conta numero de linhas
+select count(ano)
+from vendas;
+
+-- Conta quantos celulares distintos foi vendido
+select count(distinct celular_id)
+from vendas;
+
+-- Preço mínimo, máximo e médio dos productos
+select min(preco_unitario), max(preco_unitario), avg(preco_unitario)
+from vendas;
+
+-- Quantidade de cliente por estado
+select estado, count(*) as venda_estado
+from clientes
+group by estado;
+
+-- Valor do celular mais barato
+select * from celulares
+where preco = (select min(preco) from celulares);
+
+-- Idade media dos clientes por estado
+with nova_tabela as(
+select estado, 
+timestampdiff(year, data_nascimento, curdate()) as idade
+from clientes
+)
+select estado, 
+avg(idade) as idade_media
+from nova_tabela
+group by estado;
+
+-- Os 5 estados que mais venderam de forma decrescente
+select 
+'Brasil' as país,
+c.estado,
+sum(v.quantidade) as total_vendido
+from vendas v
+join clientes c 
+    on v.cliente_id = c.id
+join celulares ce 
+    on v.celular_id = ce.id
+group by país, c.estado
+order by total_vendido desc
+limit 5;
+
+-- Celulares mais vendidos
+select
+ce.modelo,
+sum(v.quantidade) as cel_mais_vendido
+from vendas v
+join celulares ce on v.celular_id = ce.id
+group by ce.modelo
+order by cel_mais_vendido desc
+limit 5;
+
+-- Vendas por marca
+select
+m.nome as marca,
+sum(v.quantidade) as total_vendas
+from vendas v
+join celulares ce on v.celular_id = ce.id
+join marcas m on ce.marca_id = m.id
+group by marca
+order by total_vendas desc;
+
+-- Marca, vendas e lucro
+select
+m.nome as marca,
+sum(v.quantidade) as total_vendas,
+sum(v.preco_unitario) as lucro
+from vendas v
+join celulares ce on v.celular_id = ce.id
+join marcas m on ce.marca_id = m.id
+group by marca
+order by total_vendas desc;
