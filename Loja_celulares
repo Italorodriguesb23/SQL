@@ -3,6 +3,7 @@ O banco de dados permite analisar preços, categorias, armazenamento dos celular
 
 
 -- Consulta geral
+
 SELECT 
     c.id AS cliente_id,
     c.nome AS cliente_nome,
@@ -28,7 +29,9 @@ JOIN
     marcas m ON ce.marca_id = m.id
 order by c.id asc;
 
+
 -- Estados que mais venderam
+
 SELECT 
     c.estado, 
     SUM(v.quantidade) AS total_vendido
@@ -43,7 +46,9 @@ GROUP BY
 ORDER BY 
     total_vendido DESC;
     
+
 -- Vendas de celulares da samsung    
+
 SELECT v.id AS venda_id, 
        c.nome AS cliente_nome, 
        cel.modelo AS celular_modelo, 
@@ -59,28 +64,40 @@ JOIN marcas m
     ON cel.marca_id = m.id
 WHERE m.nome = 'Samsung';
 
+
 -- conta numero de linhas
+
 select count(ano)
 from vendas;
 
+
 -- Conta quantos celulares distintos foi vendido
+
 select count(distinct celular_id)
 from vendas;
 
+
 -- Preço mínimo, máximo e médio dos productos
+
 select min(preco_unitario), max(preco_unitario), avg(preco_unitario)
 from vendas;
 
+
 -- Quantidade de cliente por estado
+
 select estado, count(*) as venda_estado
 from clientes
 group by estado;
 
+
 -- Valor do celular mais barato
+
 select * from celulares
 where preco = (select min(preco) from celulares);
 
+
 -- Idade media dos clientes por estado
+
 with nova_tabela as(
 select estado, 
 timestampdiff(year, data_nascimento, curdate()) as idade
@@ -91,7 +108,9 @@ avg(idade) as idade_media
 from nova_tabela
 group by estado;
 
+
 -- Os 5 estados que mais venderam de forma decrescente
+
 select 
 'Brasil' as país,
 c.estado,
@@ -105,7 +124,9 @@ group by país, c.estado
 order by total_vendido desc
 limit 5;
 
+
 -- Celulares mais vendidos
+
 select
 ce.modelo,
 sum(v.quantidade) as cel_mais_vendido
@@ -115,7 +136,9 @@ group by ce.modelo
 order by cel_mais_vendido desc
 limit 5;
 
+
 -- Vendas por marca
+
 select
 m.nome as marca,
 sum(v.quantidade) as total_vendas
@@ -125,7 +148,9 @@ join marcas m on ce.marca_id = m.id
 group by marca
 order by total_vendas desc;
 
+
 -- Marca, vendas e lucro
+
 select
 m.nome as marca,
 sum(v.quantidade) as total_vendas,
